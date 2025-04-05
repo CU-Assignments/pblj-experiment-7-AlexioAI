@@ -1,0 +1,338 @@
+1. Build a program to perform CRUD operations (Create, Read, Update, Delete) on a database table Product with columns:
+ProductID, ProductName, Price, and Quantity.
+The program should include:
+Menu-driven options for each operation.
+Transaction handling to ensure data integrity.
+
+CODE :
+          import java.sql.*;
+          import java.util.Scanner;
+          
+          public class ProductCRUD {
+              static final String DB_URL = "jdbc:mysql://localhost:3306/your_db";
+              static final String USER = "your_username";
+              static final String PASS = "your_password";
+          
+              public static void main(String[] args) {
+                  try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+                       Scanner sc = new Scanner(System.in)) {
+          
+                      conn.setAutoCommit(false);  // Enable transaction
+          
+                      while (true) {
+                          System.out.println("\n1. Create Product\n2. Read Products\n3. Update Product\n4. Delete Product\n5. Exit");
+                          System.out.print("Enter choice: ");
+                          int choice = sc.nextInt();
+          
+                          switch (choice) {
+                              case 1:
+                                  System.out.print("Product Name: ");
+                                  sc.nextLine();
+                                  String name = sc.nextLine();
+                                  System.out.print("Price: ");
+                                  double price = sc.nextDouble();
+                                  System.out.print("Quantity: ");
+                                  int qty = sc.nextInt();
+          
+                                  try (PreparedStatement ps = conn.prepareStatement("INSERT INTO Product (ProductName, Price, Quantity) VALUES (?, ?, ?)")) {
+                                      ps.setString(1, name);
+                                      ps.setDouble(2, price);
+                                      ps.setInt(3, qty);
+                                      ps.executeUpdate();
+                                      conn.commit();
+                                      System.out.println("Product added!");
+                                  } catch (Exception e) {
+                                      conn.rollback();
+                                      e.printStackTrace();
+                                  }
+                                  break;
+          
+                              case 2:
+                                  try (Statement st = conn.createStatement();
+                                       ResultSet rs = st.executeQuery("SELECT * FROM Product")) {
+                                      while (rs.next()) {
+                                          System.out.printf("ID: %d, Name: %s, Price: %.2f, Quantity: %d%n",
+                                                  rs.getInt("ProductID"),
+                                                  rs.getString("ProductName"),
+                                                  rs.getDouble("Price"),
+                                                  rs.getInt("Quantity"));
+                                      }
+                                  }
+                                  break;
+          
+                              case 3:
+                                  System.out.print("Product ID to update: ");
+                                  int pid = sc.nextInt();
+                                  System.out.print("New Price: ");
+                                  double newPrice = sc.nextDouble();
+          
+                                  try (PreparedStatement ps = conn.prepareStatement("UPDATE Product SET Price = ? WHERE ProductID = ?")) {
+                                      ps.setDouble(1, newPrice);
+                                      ps.setInt(2, pid);
+                                      ps.executeUpdate();
+                                      conn.commit();
+                                      System.out.println("Product updated!");
+                                  } catch (Exception e) {
+                                      conn.rollback();
+                                      e.printStackTrace();
+                                  }
+                                  break;
+          
+                              case 4:
+                                  System.out.print("Product ID to delete: ");
+                                  int delId = sc.nextInt();
+          
+                                  try (PreparedStatement ps = conn.prepareStatement("DELETE FROM Product WHERE ProductID = ?")) {
+                                      ps.setInt(1, delId);
+                                      ps.executeUpdate();
+                                      conn.commit();
+                                      System.out.println("Product deleted!");
+                                  } catch (Exception e) {
+                                      conn.rollback();
+                                      e.printStackTrace();
+                                  }
+                                  break;
+          
+                              case 5:
+                                  return;
+          
+                              default:
+                                  System.out.println("Invalid choice!");
+                          }
+                      }
+          
+                  } catch (SQLException e) {
+                      e.printStackTrace();
+                  }
+              }
+          }
+
+
+OUTPUT :
+
+          1. Create Product
+          2. Read Products
+          3. Update Product
+          4. Delete Product
+          5. Exit
+          Enter choice: 1
+          Product Name: Mouse
+          Price: 599.99
+          Quantity: 10
+          Product added!
+          
+          Enter choice: 1
+          Product Name: Keyboard
+          Price: 999.50
+          Quantity: 5
+          Product added!
+          
+          Enter choice: 2
+          ID: 1, Name: Mouse, Price: 599.99, Quantity: 10
+          ID: 2, Name: Keyboard, Price: 999.50, Quantity: 5
+          
+          Enter choice: 3
+          Product ID to update: 2
+          New Price: 899.00
+          Product updated!
+          
+          Enter choice: 2
+          ID: 1, Name: Mouse, Price: 599.99, Quantity: 10
+          ID: 2, Name: Keyboard, Price: 899.00, Quantity: 5
+          
+          Enter choice: 4
+          Product ID to delete: 1
+          Product deleted!
+          
+          Enter choice: 2
+          ID: 2, Name: Keyboard, Price: 899.00, Quantity: 5
+
+
+2. Develop a Java application using JDBC and MVC architecture to manage student data. The application should:
+Use a Student class as the model with fields like StudentID, Name, Department, and Marks.
+Include a database table to store student data.
+Allow the user to perform CRUD operations through a simple menu-driven view.
+Implement database operations in a separate controller class.
+
+CODE:
+      import java.sql.*;
+      import java.util.*;
+      
+      class Student {
+          private int studentID;
+          private String name;
+          private String department;
+          private double marks;
+      
+          public Student(int studentID, String name, String department, double marks) {
+              this.studentID = studentID;
+              this.name = name;
+              this.department = department;
+              this.marks = marks;
+          }
+      
+          public int getStudentID() { return studentID; }
+          public String getName() { return name; }
+          public String getDepartment() { return department; }
+          public double getMarks() { return marks; }
+      
+          public void setMarks(double marks) { this.marks = marks; }
+      }
+      
+      class StudentController {
+          private final String URL = "jdbc:mysql://localhost:3306/your_db";
+          private final String USER = "your_username";
+          private final String PASS = "your_password";
+      
+          public void addStudent(Student s) throws SQLException {
+              try (Connection conn = DriverManager.getConnection(URL, USER, PASS);
+                   PreparedStatement ps = conn.prepareStatement("INSERT INTO Student VALUES (?, ?, ?, ?)")) {
+                  ps.setInt(1, s.getStudentID());
+                  ps.setString(2, s.getName());
+                  ps.setString(3, s.getDepartment());
+                  ps.setDouble(4, s.getMarks());
+                  ps.executeUpdate();
+              }
+          }
+      
+          public List<Student> getAllStudents() throws SQLException {
+              List<Student> students = new ArrayList<>();
+              try (Connection conn = DriverManager.getConnection(URL, USER, PASS);
+                   Statement st = conn.createStatement();
+                   ResultSet rs = st.executeQuery("SELECT * FROM Student")) {
+                  while (rs.next()) {
+                      students.add(new Student(
+                              rs.getInt("StudentID"),
+                              rs.getString("Name"),
+                              rs.getString("Department"),
+                              rs.getDouble("Marks")));
+                  }
+              }
+              return students;
+          }
+      
+          public void updateMarks(int studentID, double marks) throws SQLException {
+              try (Connection conn = DriverManager.getConnection(URL, USER, PASS);
+                   PreparedStatement ps = conn.prepareStatement("UPDATE Student SET Marks = ? WHERE StudentID = ?")) {
+                  ps.setDouble(1, marks);
+                  ps.setInt(2, studentID);
+                  ps.executeUpdate();
+              }
+          }
+      
+          public void deleteStudent(int studentID) throws SQLException {
+              try (Connection conn = DriverManager.getConnection(URL, USER, PASS);
+                   PreparedStatement ps = conn.prepareStatement("DELETE FROM Student WHERE StudentID = ?")) {
+                  ps.setInt(1, studentID);
+                  ps.executeUpdate();
+              }
+          }
+      }
+      
+      public class StudentManagement {
+          public static void main(String[] args) {
+              StudentController controller = new StudentController();
+              Scanner sc = new Scanner(System.in);
+      
+              while (true) {
+                  System.out.println("\n1. Add Student\n2. View All\n3. Update Marks\n4. Delete\n5. Exit");
+                  System.out.print("Choice: ");
+                  int choice = sc.nextInt();
+      
+                  try {
+                      switch (choice) {
+                          case 1:
+                              System.out.print("ID: ");
+                              int id = sc.nextInt();
+                              sc.nextLine();
+                              System.out.print("Name: ");
+                              String name = sc.nextLine();
+                              System.out.print("Department: ");
+                              String dept = sc.nextLine();
+                              System.out.print("Marks: ");
+                              double marks = sc.nextDouble();
+                              controller.addStudent(new Student(id, name, dept, marks));
+                              System.out.println("Student Added!");
+                              break;
+      
+                          case 2:
+                              List<Student> students = controller.getAllStudents();
+                              for (Student s : students) {
+                                  System.out.printf("ID: %d, Name: %s, Dept: %s, Marks: %.2f\n",
+                                          s.getStudentID(), s.getName(), s.getDepartment(), s.getMarks());
+                              }
+                              break;
+      
+                          case 3:
+                              System.out.print("Student ID: ");
+                              int sid = sc.nextInt();
+                              System.out.print("New Marks: ");
+                              double newMarks = sc.nextDouble();
+                              controller.updateMarks(sid, newMarks);
+                              System.out.println("Marks Updated!");
+                              break;
+      
+                          case 4:
+                              System.out.print("Student ID to delete: ");
+                              int delID = sc.nextInt();
+                              controller.deleteStudent(delID);
+                              System.out.println("Deleted!");
+                              break;
+      
+                          case 5:
+                              System.out.println("Exiting...");
+                              sc.close();
+                              return;
+      
+                          default:
+                              System.out.println("Invalid choice.");
+                      }
+                  } catch (SQLException e) {
+                      System.out.println("Error: " + e.getMessage());
+                  }
+              }
+          }
+      }
+
+OUTPUT :
+          1. Add Student
+          2. View All
+          3. Update Marks
+          4. Delete
+          5. Exit
+          Choice: 1
+          ID: 101
+          Name: Lokesh
+          Department: CSE
+          Marks: 89.5
+          Student Added!
+          
+          Choice: 1
+          ID: 102
+          Name: Anjali
+          Department: ECE
+          Marks: 76.0
+          Student Added!
+          
+          Choice: 2
+          ID: 101, Name: Lokesh, Dept: CSE, Marks: 89.50
+          ID: 102, Name: Anjali, Dept: ECE, Marks: 76.00
+          
+          Choice: 3
+          Student ID: 102
+          New Marks: 80.0
+          Marks Updated!
+          
+          Choice: 2
+          ID: 101, Name: Lokesh, Dept: CSE, Marks: 89.50
+          ID: 102, Name: Anjali, Dept: ECE, Marks: 80.00
+          
+          Choice: 4
+          Student ID to delete: 101
+          Deleted!
+          
+          Choice: 2
+          ID: 102, Name: Anjali, Dept: ECE, Marks: 80.00
+          
+          Choice: 5
+          Exiting...
